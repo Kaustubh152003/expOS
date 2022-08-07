@@ -1,0 +1,9 @@
+MOV R0, "System"
+MOV R16, R0
+PORT P1, R16
+OUT
+MOV R0, "Booting..."
+MOV R16, R0
+PORT P1, R16
+OUT
+HALT
