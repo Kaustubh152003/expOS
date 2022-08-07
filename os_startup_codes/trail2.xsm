@@ -1,0 +1,24 @@
+MOV R0, "System"
+MOV R16, R0
+PORT P1, R16
+OUT
+MOV R0, "Booting..."
+MOV R16, R0
+PORT P1, R16
+OUT
+MOV R0,20
+MOV R1,1
+loop:
+PORT P1,R1
+OUT
+MOV R2,R0
+SUB R2,R1
+JZ R2,end
+INR R1
+JMP loop
+end:
+MOV R0, "completed"
+MOV R16, R0
+PORT P1, R16
+OUT
+HALT
