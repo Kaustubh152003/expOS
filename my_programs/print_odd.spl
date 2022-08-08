@@ -1,0 +1,11 @@
+read;
+R0=P0;
+read;
+R1=P0;
+R0=1;
+R1=25;
+while(R0<=R1)
+do
+print R0;
+R0=R0+2;
+endwhile;
