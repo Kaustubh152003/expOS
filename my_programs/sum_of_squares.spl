@@ -1,0 +1,11 @@
+R0=1;
+R1=20;
+R2=0;
+alias sum R2;
+while(R0<=R1)
+do
+R3=R0*R0;
+sum=sum+R3;
+R0=R0+1;
+endwhile;
+print sum;
