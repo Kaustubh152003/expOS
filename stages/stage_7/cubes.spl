@@ -1,0 +1,9 @@
+alias a R0;
+alias b R1;
+a=1;
+while(a<=10)
+do
+b=a*a*a;
+breakpoint;
+a=a+1;
+endwhile;

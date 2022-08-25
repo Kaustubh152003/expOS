@@ -1,0 +1,7 @@
+BACKUP
+MOV R16, "timer_int"
+PORT P1, R16
+OUT
+RESTORE
+IRET
+HALT
