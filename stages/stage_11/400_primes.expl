@@ -1,0 +1,60 @@
+decl
+int prime(int x);
+int mark[1000];
+enddecl
+
+int prime(int x)
+{
+    decl
+    int j,k,ans,temp;
+    enddecl
+
+    begin
+
+    j=0;
+    while(j<=x)
+    do
+    mark[j]=0;
+    j=j+1;
+    endwhile;
+
+    j=2;
+    while(j<=x)
+    do
+        if(mark[j]==0)
+        then
+        k=j*2;
+        while(k<=x)
+        do
+        mark[k]=1;
+        k=k+j;
+        endwhile;
+        endif;
+        j=j+1;
+    endwhile;
+    return 0;
+
+    end
+}
+
+int main()
+{
+    decl
+    int j,k,x,y,temp,garb;
+    enddecl
+
+    begin
+    x=400;
+    temp=prime(x);
+    j=2;
+    while(j<=400)
+    do
+        if(mark[j]==0)
+        then
+        garb=exposcall("Write",-2,j);
+        endif;
+    j=j+1;
+    endwhile;
+    return 0;
+    end
+}
