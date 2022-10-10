@@ -1,0 +1,17 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+if(fno==3)
+then
+fno=8;
+backup;
+call MOD_0;
+restore;
+print val;
+fno=9;
+backup;
+call MOD_0;
+restore;
+endif;
+return;

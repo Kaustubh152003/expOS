@@ -1,0 +1,44 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias x R10;
+//acquire terminal
+if(fno==8)
+then
+while([TERMINAL_STATUS_TABLE]==1)
+do
+[PROCESS_TABLE+PID*16+4]=WAIT_TERMINAL;
+backup;
+call MOD_5;
+restore;
+endwhile;
+[TERMINAL_STATUS_TABLE]=1;
+[TERMINAL_STATUS_TABLE+1]=PID;
+//breakpoint;
+return;
+endif;
+
+//release terminal
+if(fno==9)
+then
+if([TERMINAL_STATUS_TABLE+1]==PID)
+then
+[TERMINAL_STATUS_TABLE]=0;
+x=0;
+    while(x<16)
+    do
+    if([PROCESS_TABLE+x*16+4]==WAIT_TERMINAL)
+    then
+    [PROCESS_TABLE+PID*16+4]=READY;
+    endif;
+    x=x+1;
+    endwhile;
+ret=0;
+else
+ret=-1;
+endif;
+//breakpoint;
+return;
+endif;
+
+return;

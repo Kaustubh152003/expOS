@@ -1,0 +1,42 @@
+decl
+int gcd(int a,int b);
+enddecl
+
+int gcd(int a,int b)
+{
+    decl
+    int garb,ret;
+    enddecl
+
+    begin
+    if(b==0)
+    then
+    ret=a;
+    else
+        if(a<b)
+        then
+        ret=gcd(b,a);
+        else
+        ret=gcd(a%b,b);
+        endif;
+    endif;
+    return ret;
+    end
+}
+int main()
+{
+    decl 
+    int a,b,c,d,garb;
+    enddecl
+
+    begin
+    a=20;
+    b=20;
+    garb=exposcall("Read",-1,a);
+    garb=exposcall("Read",-1,b);
+    c=gcd(a,b);
+    garb=exposcall("Write",-2,c);
+    return 0;
+    end
+}
+

@@ -1,0 +1,20 @@
+alias PID R15;
+breakpoint;
+//switching to kernel stack
+[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+1]*16)+13]=SP;
+SP=[PROCESS_TABLE + ([SYSTEM_STATUS_TABLE+1]*16)+11]*512-1;
+
+PID=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+PID*16+4]=TERMINATED;
+alias x R14;
+x=1;
+while(x<=15 && [PROCESS_TABLE+x*16+4]==TERMINATED)
+do
+x=x+1;
+endwhile;
+if(x==16)
+then
+halt;
+else
+call MOD_5;
+endif;
