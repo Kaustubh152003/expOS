@@ -1,0 +1,60 @@
+alias uSP R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias arg1 R4;
+alias arg2 R5;
+alias arg3 R6;
+alias x R7;
+alias y R8;
+alias z R9;
+alias retval R10;
+alias p R11;
+alias q R12;
+goto global_start;
+
+adress_translate:
+y=x/512;
+z=x%512;
+retval=z+([PTBR+2*y]*512);
+return;
+
+global_start:
+uSP=SP;
+PID=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+16*PID+13]=SP;
+SP=[PROCESS_TABLE+16*PID+11]*512-1;
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=7;
+
+
+x=uSP-3;
+call adress_translate;
+arg2=[retval];
+
+x=uSP-4;
+call adress_translate;
+arg1=[retval];
+
+
+if(arg1==-1)
+then
+backup;
+fno=4;
+x=arg2;
+call adress_translate;
+val=retval;
+//breakpoint;
+call MOD_4;
+restore;
+x=uSP-1;
+call adress_translate;
+[retval]=0;
+else
+x=uSP-1;
+call adress_translate;
+[retval]=-1;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=0;
+ireturn;

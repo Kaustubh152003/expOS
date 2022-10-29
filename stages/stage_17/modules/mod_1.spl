@@ -1,0 +1,55 @@
+//process manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+
+if(fno==2) //free user area
+then
+backup;
+fno=2;
+val=[PROCESS_TABLE+16*PID+11];
+call MOD_2;
+restore;
+endif;
+
+if(fno==3) //exit process
+then
+backup;
+fno=4;
+call MOD_1;
+fno=2;
+call MOD_1;
+restore;
+[PROCESS_TABLE+16*PID+4]=TERMINATED;
+endif;
+
+
+if(fno==4) //free page table
+then
+[PAGE_TABLE_BASE+PID*20+0]=-1;
+[PAGE_TABLE_BASE+PID*20+1]="0000";
+[PAGE_TABLE_BASE+PID*20+2]=-1;
+[PAGE_TABLE_BASE+PID*20+3]="0000";
+x=2;
+while(x<10)
+do
+    y=[PAGE_TABLE_BASE+PID*20+2*x];
+    if(y!=-1)
+    then
+    backup;
+    fno=2;
+    val=y;
+    call MOD_2;
+    restore;
+    [PAGE_TABLE_BASE+PID*20+2*x]=-1;
+    [PAGE_TABLE_BASE+PID*20+2*x+1]="0000";
+    endif;    
+x=x+1;
+endwhile;
+endif;
+
+return;

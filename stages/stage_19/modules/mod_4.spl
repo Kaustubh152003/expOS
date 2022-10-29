@@ -1,0 +1,65 @@
+//device manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias val2 R4;
+
+if(fno==1)//disk store
+then
+print "not com";
+halt;
+endif;
+
+if(fno==2)//disk load
+then
+//print "ent:42";
+backup;
+fno=3;
+call MOD_0;
+restore;
+if(val2<0)
+then
+print "err: db";
+halt;
+else
+load(val,val2);
+endif;
+[PROCESS_TABLE+16*PID+4]=WAIT_DISK;
+backup;
+call MOD_5;
+restore;
+//print "ext:42";
+endif;
+
+if(fno==3)
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+print val;
+backup;
+fno=9;
+call MOD_0;
+restore;
+endif;
+
+if(fno==4)
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+[PROCESS_TABLE+16*PID+4]=WAIT_TERMINAL;
+print "give for PID:";
+print PID;
+read;
+backup;
+call MOD_5;
+restore;
+[val]=[PROCESS_TABLE+16*PID+8];
+//breakpoint;
+endif;
+
+return;

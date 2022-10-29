@@ -1,0 +1,143 @@
+alias PID R15;
+alias x R14;
+//loading library
+loadi(63,13);
+loadi(64,14);
+
+//loading interupts 
+loadi(2,15);
+loadi(3,16);
+loadi(4,17);
+loadi(5,18);
+loadi(6,19);
+loadi(7,20);
+loadi(8,21);
+loadi(9,22);
+loadi(10,23);
+loadi(11,24);
+loadi(12,25);
+loadi(13,26);
+loadi(14,27);
+loadi(15,28);
+loadi(16,29);
+loadi(17,30);
+loadi(18,31);
+loadi(19,32);
+loadi(20,33);
+loadi(21,34);
+loadi(22,35);
+loadi(23,36);
+loadi(24,37);
+loadi(25,38);
+loadi(26,39);
+loadi(27,40);
+loadi(28,41);
+loadi(29,42);
+loadi(30,43);
+loadi(31,44);
+loadi(32,45);
+loadi(33,46);
+loadi(34,47);
+loadi(35,48);
+loadi(36,49);
+loadi(37,50);
+loadi(38,51);
+loadi(39,52);
+loadi(40,53);
+loadi(41,54);
+loadi(42,55);
+loadi(43,56);
+loadi(44,57);
+loadi(45,58);
+loadi(46,59);
+loadi(47,60);
+loadi(48,61);
+loadi(49,62);
+loadi(50,63);
+loadi(51,64);
+loadi(52,65);
+loadi(53,66);
+
+//initializing memory free list;
+x=0;
+while(x<83)
+do
+[MEMORY_FREE_LIST+x]=1;
+x=x+1;
+endwhile;
+
+while(x<128)
+do
+[MEMORY_FREE_LIST+x]=0;
+x=x+1;
+endwhile;
+
+//initializing system status table
+[SYSTEM_STATUS_TABLE+2]=45;
+[SYSTEM_STATUS_TABLE+3]=0;
+
+//initializing terminal status table
+[TERMINAL_STATUS_TABLE]=0;
+
+//loading init
+loadi(65,7);
+loadi(66,8);
+
+//loading inode table
+loadi(59,3);
+loadi(60,4);
+
+//initializing all processes from 1 to 15 in process table to terminated (as none of them are added yet, they are free)
+x=1;
+while(x<=15)
+do
+[PROCESS_TABLE+x*16+4]=TERMINATED;
+x=x+1;
+endwhile;
+
+//setting up page table for init
+PID=1;
+PTBR=PAGE_TABLE_BASE+PID*20;
+PTLR=10;
+//library
+[PTBR+0]=63;
+[PTBR+1]="0100";
+[PTBR+2]=64;
+[PTBR+3]="0100";
+
+//heap
+[PTBR+4]=78;
+[PTBR+5]="0110";
+[PTBR+6]=79;
+[PTBR+7]="0110";
+
+//code
+[PTBR+8]=65;
+[PTBR+9]="0100";
+[PTBR+10]=66;
+[PTBR+11]="0100";
+[PTBR+12]=-1;
+[PTBR+13]="0000";
+[PTBR+14]=-1;
+[PTBR+15]="0000";
+
+//stack
+[PTBR+16]=76;
+[PTBR+17]="0110";
+[PTBR+18]=77;
+[PTBR+19]="0110";
+
+//setting up process table
+[PROCESS_TABLE+PID*16+1]=PID;
+[PROCESS_TABLE+PID*16+4]=CREATED;
+[PROCESS_TABLE+PID*16+11]=80;
+[PROCESS_TABLE+PID*16+12]=0;
+[PROCESS_TABLE+PID*16+13]=8*512;
+[PROCESS_TABLE+PID*16+14]=PTBR;
+[PROCESS_TABLE+PID*16+15]=PTLR;
+
+//setting IP on stack
+[76*512]=[65*512+1];
+
+return;
+

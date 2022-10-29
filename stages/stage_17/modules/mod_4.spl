@@ -1,0 +1,36 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+
+if(fno==3)
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+print val;
+backup;
+fno=9;
+call MOD_0;
+restore;
+endif;
+
+if(fno==4)
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+[PROCESS_TABLE+16*PID+4]=WAIT_TERMINAL;
+print "give for PID:";
+print PID;
+read;
+backup;
+call MOD_5;
+restore;
+[val]=[PROCESS_TABLE+16*PID+8];
+breakpoint;
+endif;
+
+return;
