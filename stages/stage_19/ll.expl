@@ -1,0 +1,72 @@
+type
+list{
+int data;
+list next;
+}
+endtype
+
+decl
+list createnode(int x);
+list insertll(list head,list x);
+enddecl
+
+list createnode(int x)
+{
+    decl
+    list ptr;
+    int temp;
+    enddecl
+
+    begin
+    ptr=alloc();
+    ptr.data=x;
+    ptr.next=null;
+    return ptr;
+    end
+}
+list insertll(list head,list x)
+{
+    decl
+    list temp;
+    enddecl
+
+    begin
+    x.next=head;
+    head=x;
+    return head;
+    end
+}
+int main()
+{
+    decl
+    int garb,a,b,c,n,j,k;
+    list x,y,z;
+    enddecl
+
+    begin
+    garb=initialize();
+    a=100;
+    x=null;
+    garb=exposcall("Write",-2,a);
+    garb=exposcall("Read",-1,n);
+    j=0;
+    while(j<n)
+    do
+    garb=exposcall("Read",-1,b);
+    y=createnode(b);
+    x=insertll(x,y);
+    j=j+1;
+    endwhile;
+
+    j=0;
+    z=x;
+    while(j<n)
+    do
+    b=z.data;
+    z=z.next;
+    garb=exposcall("Write",-2,b);
+    j=j+1;
+    endwhile;
+    return 0;
+    end
+}
