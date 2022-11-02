@@ -1,0 +1,29 @@
+int main()
+{
+    decl
+    int a,b,c,d,garb,cPID;
+    str com;
+    enddecl
+
+    begin
+    a=1;
+    while(a==1)
+    do
+        garb=exposcall("Read",-1,com);
+        if(com=="Shutdown")
+        then
+        garb=exposcall("Shutdown");
+        break;
+        else
+            cPID=exposcall("Fork");
+            if(cPID==0)
+            then
+            garb=exposcall("Exec",com);
+            else
+            garb=exposcall("Wait",cPID);
+            endif;
+        endif;
+    endwhile;
+    return 0;
+    end
+}

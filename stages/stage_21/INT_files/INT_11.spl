@@ -1,0 +1,84 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+alias uSP R8;
+alias userret R9;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+global_start:
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=SP;
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+
+val=uSP-5;
+call adress_translate;
+fno=[rval];
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+
+
+if(fno==11) //get pid
+then
+[PROCESS_TABLE+16*PID+9]=11;
+[userret]=PID;
+endif;
+
+if(fno==12) //get ppid
+then
+[PROCESS_TABLE+16*PID+9]=12;
+[userret]=[PROCESS_TABLE+16*PID+2];
+endif;
+
+
+if(fno==13) //wait
+then
+[PROCESS_TABLE+16*PID+9]=13;
+val=uSP-4;
+call adress_translate;
+rval=[rval];
+if(rval>0 && rval<16 && [PROCESS_TABLE+16*rval+4]!=TERMINATED)
+then
+[PROCESS_TABLE+16*PID+4]=WAIT_PROCESS;
+[PROCESS_TABLE+16*PID+5]=rval;
+backup;
+call MOD_5;
+restore;
+[userret]=0;
+else
+[userret]=-1;
+endif;
+endif;
+
+if(fno==14) //signal
+then
+x=1;
+while(x<16)
+do
+[PROCESS_TABLE+16*PID+9]=14;
+if([PROCESS_TABLE+16*x+4]==WAIT_PROCESS && [PROCESS_TABLE+16*x+5]==PID)
+then
+[PROCESS_TABLE+16*x+4]=READY;
+endif;
+x=x+1;
+endwhile;
+[userret]=0;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;
+

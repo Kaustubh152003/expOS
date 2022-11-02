@@ -1,0 +1,24 @@
+int main()
+{
+    decl
+    int a,b,c,d,x,y,z,garb,cPID;
+    enddecl
+
+    begin
+    a=100;
+    garb=exposcall("Write",-2,a);
+    garb=exposcall("Read",-1,b);
+    garb=exposcall("Read",-1,d);
+    cPID=exposcall("Fork");
+    if(cPID!=0)
+    then
+    garb=exposcall("Wait",cPID);
+    garb=exposcall("Exec",b);
+    else
+    a=exposcall("Getppid");
+    garb=exposcall("Write",-2,a);
+    garb=exposcall("Exec",d);
+    endif;
+    return 0;
+    end
+}

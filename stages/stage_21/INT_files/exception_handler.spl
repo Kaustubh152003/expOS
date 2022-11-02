@@ -1,0 +1,80 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias val2 R4;
+alias x R5;
+alias y R6;
+alias rval R7;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+global_start:
+[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+13]=SP;
+[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+9]=-1;  
+SP=[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+11]*512-1;
+backup;
+multipush(EIP);
+
+PID=[SYSTEM_STATUS_TABLE+1];
+if(EC==0)
+then
+if(EPN==2 || EPN==3)
+then
+multipush(R1,R2,R3,R4,R5,R6,R7);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7);
+[PTBR+4]=ret;
+[PTBR+5]="1110";
+
+multipush(R1,R2,R3,R4,R5,R6,R7);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7);
+[PTBR+6]=ret;
+[PTBR+7]="1110";
+else
+val=[DISK_MAP_TABLE+PID*10+EPN];
+multipush(R1,R2,R3,R4,R5,R6,R7);
+fno=5;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7);
+[PTBR+EPN*2]=ret;
+[PTBR+EPN*2+1]="1100";
+endif;
+
+multipop(EIP);
+val=[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+13]+1;
+call adress_translate;
+[rval]=EIP;
+restore;
+[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+9]=0;
+SP=[PROCESS_TABLE+(16*[SYSTEM_STATUS_TABLE+1])+13]+1;
+ireturn;
+else
+if(EC==1)
+then
+print "exc: 1";
+endif;
+
+if(EC==2)
+then
+print "exc: 2";
+endif;
+
+if(EC==3)
+then
+print "exc: 3";
+endif;
+backup;
+fno=3;
+call MOD_1;
+restore;
+call MOD_5;
+endif;

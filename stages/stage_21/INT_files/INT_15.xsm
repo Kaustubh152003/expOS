@@ -1,0 +1,8 @@
+MOV R16, "shutting"
+PORT P1, R16
+OUT
+MOV R16, "down"
+PORT P1, R16
+OUT
+HALT
+HALT

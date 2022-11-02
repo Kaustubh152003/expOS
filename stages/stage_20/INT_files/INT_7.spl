@@ -1,0 +1,61 @@
+//INT 7
+alias uSP R0;
+alias val R1;
+alias arg1 R2;
+alias arg2 R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+alt_print:
+backup;
+R1=3;
+R2=[SYSTEM_STATUS_TABLE+1];
+R3=arg2;
+call MOD_4;
+restore;
+return;
+
+global_start:
+
+//saving user SP ,setting up kernel stack and setting up process table
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=5;
+backup;
+
+uSP=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13];
+
+val=uSP-4;
+call adress_translate;
+arg1=[rval];
+
+val=uSP-3;
+call adress_translate;
+arg2=[rval];
+
+if(arg1==-2)
+then
+	call alt_print;
+	val=uSP-1;
+	call adress_translate;
+	[rval]=0;
+else
+	val=uSP-1;
+	call adress_translate;
+	[rval]=-1;
+endif;
+
+restore;
+//restoring user SP;
+SP=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13]; 
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=0;
+ireturn;

@@ -1,0 +1,113 @@
+//process manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+
+if(fno==1) //get pcb
+then
+x=1;
+while(x<16 && [PROCESS_TABLE+x*16+4]!=TERMINATED)
+do
+x=x+1;
+endwhile;
+
+if(x==16)
+then
+ret=-1;
+else
+ret=x;
+[PROCESS_TABLE+16*x+1]=x;
+[PROCESS_TABLE+16*x+4]=ALLOCATED;
+[PROCESS_TABLE+16*x+14]=PAGE_TABLE_BASE+20*x;
+[PROCESS_TABLE+16*x+15]=10;
+endif;
+return;
+endif;
+
+if(fno==2) //free user area
+then
+backup;
+fno=2;
+val=[PROCESS_TABLE+16*PID+11];
+call MOD_2;
+restore;
+endif;
+
+if(fno==3) //exit process
+then
+backup;
+fno=4;
+call MOD_1;
+fno=2;
+call MOD_1;
+restore;
+
+if([PROCESS_TABLE+PID*16+9]!=9)
+then
+x=1;
+while(x<16)
+do
+[PROCESS_TABLE+16*PID+9]=14;
+if([PROCESS_TABLE+16*x+4]==WAIT_PROCESS && [PROCESS_TABLE+16*x+5]==PID)
+then
+[PROCESS_TABLE+16*x+4]=READY;
+endif;
+if([PROCESS_TABLE+16*x+2]==PID)
+then
+[PROCESS_TABLE+16*x+2]=-1;
+endif;
+x=x+1;
+endwhile;
+[PROCESS_TABLE+16*PID+4]=TERMINATED;
+endif;
+endif;
+
+
+if(fno==4) //free page table
+then
+[PAGE_TABLE_BASE+PID*20+0]=-1;
+[PAGE_TABLE_BASE+PID*20+1]="0000";
+[PAGE_TABLE_BASE+PID*20+2]=-1;
+[PAGE_TABLE_BASE+PID*20+3]="0000";
+x=2;
+while(x<10)
+do
+    y=[PAGE_TABLE_BASE+PID*20+2*x];
+    if(y!=-1)
+    then
+    backup;
+    fno=2;
+    val=y;
+    if(val<60)
+    then
+    print "err: 14";
+    print y;
+    endif;
+    call MOD_2;
+    restore;
+    [PAGE_TABLE_BASE+PID*20+2*x]=-1;
+    [PAGE_TABLE_BASE+PID*20+2*x+1]="0000";
+    endif;    
+x=x+1;
+endwhile;
+x=2;
+while(x<10)
+do
+if([DISK_MAP_TABLE+PID*10+x]!=-1)
+then
+backup;
+fno=4;
+val=[DISK_MAP_TABLE+PID*10+x];
+call MOD_2;
+restore;
+[DISK_MAP_TABLE+PID*10+x]=-1;
+endif;
+x=x+1;
+endwhile;
+endif;
+
+return;

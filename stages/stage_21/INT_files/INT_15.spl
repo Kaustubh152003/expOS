@@ -1,0 +1,3 @@
+print "shutting";
+print "down";
+halt;

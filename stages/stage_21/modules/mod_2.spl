@@ -1,0 +1,96 @@
+//memory manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias flag R6;
+alias z R7;
+alias w R8;
+
+if(fno==1) //get free page
+then
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]+1;
+    while([SYSTEM_STATUS_TABLE+2]==0)
+    do
+    [PROCESS_TABLE+PID*16+4]=WAIT_MEM;
+    backup;
+    call MOD_5;
+    restore;
+    endwhile;
+
+    [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]-1;
+    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+    x=0;
+        while(x<128)
+        do
+            if([MEMORY_FREE_LIST+x]==0)
+            then
+            [MEMORY_FREE_LIST+x]=1;
+            break;
+            endif;
+        x=x+1;
+        endwhile;
+    ret=x;
+    return;    
+endif;
+
+
+if(fno==2) //release page
+then
+if(val<60)
+then
+print "err";
+breakpoint;
+endif;
+[MEMORY_FREE_LIST+val]=[MEMORY_FREE_LIST+val]-1;
+    if([MEMORY_FREE_LIST+val]==0)
+    then
+    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]+1;
+    endif;
+    x=1;
+    while(x<16)
+    do
+        if([PROCESS_TABLE+x*16+4]==WAIT_MEM)
+        then
+        [PROCESS_TABLE+x*16+4]=READY;
+        endif;
+    x=x+1;
+    endwhile;
+return;
+endif;
+
+if(fno==4)// release block
+then
+if(val!=-1)
+then
+[DISK_FREE_LIST+val]=[DISK_FREE_LIST+val]-1;
+endif;
+endif;
+
+if(fno==5) //get code page
+then
+//print "ent:25";
+x=160;
+
+if(x==160)
+then
+multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+z=ret;
+x=val;
+val=ret;
+multipush(R1,R2,R3,R4,R5,R6,R7,R8);
+fno=2;
+call MOD_4;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8);
+ret=z;
+endif;
+
+endif;
+
+
+return;
