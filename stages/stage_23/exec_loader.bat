@@ -1,0 +1,12 @@
+load --exec ../expl/user_programs/stage_13/even_100.xsm
+load --exec ../expl/user_programs/stage_13/odd_100.xsm
+load --exec ../expl/user_programs/stage_14/p_100.xsm
+load --exec ../expl/user_programs/stage_16/assg1/b_sort.xsm
+load --exec ../expl/user_programs/stage_19/ll.xsm
+load --exec ../expl/user_programs/stage_21/3fork.xsm
+load --exec ../expl/user_programs/stage_21/getpid.xsm
+load --exec ../expl/user_programs/stage_22/assg1.xsm
+load --exec ../expl/user_programs/stage_22/assg2_p.xsm
+load --exec ../expl/user_programs/stage_22/assg2_c.xsm
+load --exec ../expl/user_programs/stage_22/assg3_s.xsm
+load --exec ../expl/user_programs/stage_22/assg3_c.xsm

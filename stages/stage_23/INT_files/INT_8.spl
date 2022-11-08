@@ -1,0 +1,146 @@
+//fork systemcall
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias uSP R7;
+alias userret R9;
+alias retval R8;
+alias cPID R10;
+uSP=SP;
+PID=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+[PROCESS_TABLE+PID*16+9]=8;
+
+x=uSP-1;
+y=x/512;
+z=x%512;
+retval=z+([PTBR+2*y]*512);
+userret=retval;
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=1;
+call MOD_1;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+cPID=ret;
+
+
+if(ret==-1)
+then
+[userret]=-1;
+else
+if([PAGE_TABLE_BASE+PID*16+4]==-1) //if heap is not allocated
+then
+y=0;
+while(y<2)
+do
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+[PTBR+4+2*y]=ret;
+[PTBR+5+2*y]="1110";
+y=y+1;
+endwhile;
+endif;
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+[PROCESS_TABLE+cPID*16+11]=ret;
+
+
+
+x=PROCESS_TABLE+cPID*16;
+y=PROCESS_TABLE+PID*16;
+[x+3]=[y+3];
+[x+6]=[y+6];
+[x+7]=[y+7];
+[x+10]=[y+10];
+[x+13]=[y+13];
+[x+0]=0;
+[x+2]=PID;
+[x+9]=0;
+[x+12]=0;
+
+//copying per-processes table
+
+x=[PROCESS_TABLE+16*cPID+11];
+x=(x+1)*512-1;
+y=0;
+while(y<16)
+do
+z=([PROCESS_TABLE+16*PID+11]+1)*512-1-y;
+if([z]==SEMAPHORE && y%2==1)
+then
+[SEMAPHORE_TABLE+[z+1]*4+1]=[SEMAPHORE_TABLE+[z+1]*4+1]+1;
+endif;
+[x]=[z];
+x=x-1;
+y=y+1;
+endwhile;
+
+//end of copy of per-process table
+
+x=0;
+while(x<10)
+do
+[DISK_MAP_TABLE+cPID*10+x]=[DISK_MAP_TABLE+PID*10+x];
+x=x+1;
+endwhile;
+
+x=0;
+y=PAGE_TABLE_BASE+PID*20;
+while(x<8)
+do
+[PAGE_TABLE_BASE+cPID*20+2*x]=[y+2*x];
+if([y+2*x]!=-1)
+then
+[MEMORY_FREE_LIST+[y+2*x]]=[MEMORY_FREE_LIST+[y+2*x]]+1;
+endif;
+[PAGE_TABLE_BASE+cPID*20+2*x+1]=[y+2*x+1];
+x=x+1;
+endwhile;
+
+z=[PROCESS_TABLE+cPID*16+14];
+val=0;
+while(val<2)
+do
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=1;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+[z+16+2*val]=ret;
+[z+17+2*val]="1110";
+x=ret*512;
+y=[PTBR+16+2*val]*512;
+while(x<(ret+1)*512)
+do
+[x]=[y];
+x=x+1;
+y=y+1;
+endwhile;
+val=val+1;
+endwhile;
+
+[[PROCESS_TABLE+cPID*16+11]*512]=BP;
+
+[PROCESS_TABLE+16*cPID+4]=CREATED;
+[userret]=cPID;
+x=uSP-1;
+y=x/512;
+z=[PROCESS_TABLE+cPID*16+14];
+retval=x%512+([z+2*y]*512);
+[retval]=0;
+
+endif;
+SP=uSP;
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;
+
+

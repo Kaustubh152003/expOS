@@ -1,0 +1,153 @@
+//file create and delete
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+alias uSP R8;
+alias userret R9;
+alias filename R10;
+alias perm R11;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+global_start:
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=SP;
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+
+val=uSP-5;
+call adress_translate;
+fno=[rval];
+
+val=uSP-4;
+call adress_translate;
+filename=[rval];
+
+val=uSP-3;
+call adress_translate;
+perm=[rval];
+
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+[PROCESS_TABLE+PID*16+9]=fno;
+
+if(fno==1) //create
+then
+x=0;
+while(x<MAX_FILE_NUM && [INODE_TABLE+16*x+1]!=-1 && [INODE_TABLE+16*x+1]!=filename)
+do
+x=x+1;
+endwhile;
+
+if(x==MAX_FILE_NUM || [INODE_TABLE+16*x+1]==filename)
+then
+if(x==MAX_FILE_NUM)
+then
+print "err:mflr";
+[userret]=-1;
+else
+[userret]=0;
+endif;
+else
+[INODE_TABLE+16*x]=DATA;
+[INODE_TABLE+16*x+1]=filename;
+[INODE_TABLE+16*x+2]=0;
+[INODE_TABLE+16*x+3]=[PROCESS_TABLE+16*PID+3];
+[INODE_TABLE+16*x+4]=perm;
+y=0;
+while(y<4)
+do
+[INODE_TABLE+16*x+8+y]=-1;
+y=y+1;
+endwhile;
+
+[ROOT_FILE+8*x]=filename;
+[ROOT_FILE+8*x+1]=0;
+[ROOT_FILE+8*x+2]=DATA;
+[ROOT_FILE+8*x+3]=[USER_TABLE];
+[ROOT_FILE+8*x+4]=perm;
+endif;
+endif;
+
+
+
+
+if(fno==4) //delete
+then
+//print "ent:I4_2";
+x=0;
+while(x<MAX_FILE_NUM && [INODE_TABLE+16*x+1]!=filename)
+do
+x=x+1;
+endwhile;
+if(x==MAX_FILE_NUM)
+then
+print "err:I42_1";
+[userret]=0;
+else
+if([INODE_TABLE+16*x]!=DATA)
+then
+print "err:I42_2";
+[userret]=-1;
+else
+
+//exclusive permission thingy
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+fno=4;
+val=x;
+call MOD_0;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+
+if([FILE_STATUS_TABLE+x*4+1]==-1)
+then
+[INODE_TABLE+x*16+1]=-1;
+[ROOT_FILE+x*8]=-1;
+y=0;
+while(y<4)
+do
+if([INODE_TABLE+16*x+8+y]!=-1)
+then
+val=[INODE_TABLE+16*x+8+y];
+z=val%MAX_BUFFER;
+if([BUFFER_TABLE+4*z]==val && [BUFFER_TABLE+4*z+1]==1)
+then
+[BUFFER_TABLE+4*z+1]=0;
+endif;
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+fno=4;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+endif;
+y=y+1;
+endwhile;
+[userret]=0;
+else
+[userret]=-2;
+endif;
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+fno=5;
+val=x;
+call MOD_0;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11);
+
+endif;
+endif;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;

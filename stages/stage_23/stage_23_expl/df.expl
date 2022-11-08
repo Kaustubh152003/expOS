@@ -1,0 +1,14 @@
+int main()
+{
+    decl
+    int a,b,garb,perm;
+    str s;
+    enddecl
+
+    begin
+    garb=exposcall("Read",-1,s);
+    a=exposcall("Delete",s,perm);
+    garb=exposcall("Write",-2,a);
+    return 0;
+    end
+}
