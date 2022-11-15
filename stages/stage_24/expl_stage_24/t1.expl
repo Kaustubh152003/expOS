@@ -1,0 +1,25 @@
+int main()
+{
+    decl
+    int a,b,c,garb,fd;
+    enddecl
+
+    begin
+    a=0;
+    garb=exposcall("Write",-2,a);
+    garb=exposcall("Read",-1,a);
+    fd=exposcall("Open",a);
+    c=1;
+    while(c!=-2)
+    do
+    c=exposcall("Read",fd,a);
+    if(c!=-2)
+    then
+    garb=exposcall("Write",-2,a);
+    endif;
+    endwhile;
+    garb=exposcall("Close",fd);
+    return 0;
+    end
+
+}

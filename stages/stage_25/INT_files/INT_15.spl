@@ -1,0 +1,92 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias val2 R4;
+alias x R5;
+alias y R6;
+alias rval R7;
+alias uSP R8;
+alias userret R9;
+alias z R10;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+disk_store:
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=1;
+val=y;
+val2=x;
+call MOD_4;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+return;
+
+global_start:
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=SP;
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+[PROCESS_TABLE+PID*16+9]=fno;
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+
+if(PID==1 && [PROCESS_TABLE+PID*16+3]==1)
+then
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10);
+fno=5;
+call MOD_1; 
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10); 
+
+x=0;
+while(x<4)
+do
+if([BUFFER_TABLE+4*x+1]==1)
+then
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9); 
+fno=1;
+val=71+x;
+val2=[BUFFER_TABLE+4*x];
+call MOD_4;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9);
+endif;
+x=x+1;
+endwhile;
+
+x=3;
+y=59;
+call disk_store;
+
+x=4;
+y=60;
+call disk_store;
+
+x=5;
+y=62;
+call disk_store;
+
+x=2;
+y=61;
+call disk_store;
+
+
+
+print "shutting";
+print "down";
+halt;
+
+
+else
+print "no perm";
+[userret]=-1;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;
