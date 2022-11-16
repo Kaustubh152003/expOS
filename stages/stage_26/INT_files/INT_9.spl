@@ -1,0 +1,138 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias arg1 R4;
+alias arg2 R5;
+alias arg3 R6;
+alias x R7;
+alias y R8;
+alias z R9;
+alias retval R10;
+alias p R11;
+alias q R12;
+alias uSP R13;
+alias ind R14;
+goto global_start;
+
+adress_translate:
+y=x/512;
+z=x%512;
+retval=z+([PTBR+2*y]*512);
+return;
+
+global_start:
+uSP=SP;
+PID=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+[PROCESS_TABLE+PID*16+9]=9;
+
+x=uSP-4;
+call adress_translate;
+retval=[retval];
+x=0;
+while(x<MAX_FILE_NUM && [INODE_TABLE+16*x+1]!=retval)
+do
+x=x+1;
+endwhile;
+
+if(x!=MAX_FILE_NUM)
+then
+ind=x;
+else
+print "err:fnf";
+backup;
+fno=3;
+call MOD_1;
+restore;
+endif;
+
+backup;
+fno=3;
+call MOD_1;
+restore;
+
+q=[PROCESS_TABLE+16*PID+11];
+[MEMORY_FREE_LIST+q]=[MEMORY_FREE_LIST+q]+1;
+[SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+SP=q*512-1;
+//setting up process table
+
+[PROCESS_TABLE+PID*16+4]=RUNNING;
+[PROCESS_TABLE+PID*16+12]=0;
+[PROCESS_TABLE+PID*16+13]=8*512;
+
+//setting up page table for process
+//library
+[PTBR+0]=63;
+[PTBR+1]="0100";
+[PTBR+2]=64;
+[PTBR+3]="0100";
+
+//code
+if([INODE_TABLE+ind*16+8]!=-1)
+then
+backup;
+fno=1;
+call MOD_2;
+[PTBR+8]=ret;
+restore;
+
+p=[PTBR+8];
+backup;
+fno=2;
+val=p;
+arg1=[INODE_TABLE+ind*16+8];
+call MOD_4;
+restore;
+[PTBR+9]="0100";
+else
+[PTBR+8]=-1;
+[PTBR+9]="0000";
+endif;
+
+//initializing DISK_MAP_TABLE
+x=0;
+while(x<10)
+do
+if(x>=4 && x<=7)
+then
+[DISK_MAP_TABLE+PID*10+x]=[INODE_TABLE+ind*16+4+x];
+else
+[DISK_MAP_TABLE+PID*10+x]=-1;
+endif;
+x=x+1;
+endwhile;
+
+//stack
+backup;
+fno=1;
+call MOD_2;
+[PTBR+16]=ret;
+restore;
+[PTBR+17]="0110";
+backup;
+fno=1;
+call MOD_2;
+[PTBR+18]=ret;
+restore;
+[PTBR+19]="0110";
+
+x=[PROCESS_TABLE+16*PID+11];
+x=(x+1)*512-1;
+y=0;
+while(y<16)
+do
+[x]=-1;
+x=x-1;
+y=y+1;
+endwhile;
+//setting IP on stack
+[[PTBR+16]*512]=[[PTBR+8]*512+1];
+
+
+SP=8*512;
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=0;
+ireturn;
+

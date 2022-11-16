@@ -1,0 +1,23 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+
+PID=[SYSTEM_STATUS_TABLE+1];
+SP=[PROCESS_TABLE+16*PID+11]*512-1;
+[PROCESS_TABLE+16*PID+9]=10;
+
+backup;
+fno=3;
+call MOD_1;
+restore;
+
+call MOD_5;
+print "err:I10";
+halt;
+
+
+

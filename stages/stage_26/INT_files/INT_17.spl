@@ -1,0 +1,79 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+alias uSP R8;
+alias userret R9;
+alias pw R10;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+global_start:
+
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=SP;
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+
+
+val=uSP-5;
+call adress_translate;
+fno=[rval];
+
+val=uSP-3;
+call adress_translate;
+pw=[rval];
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+
+val=uSP-4;
+call adress_translate;
+val=[rval];
+
+
+[PROCESS_TABLE+PID*16+9]=fno;
+if(fno==27 && PID==1)
+then
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=val)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM)
+then
+[userret]=-1;
+else
+encrypt pw;
+if([USER_TABLE+2*x+1]!=pw)
+then
+[userret]=-1;
+else
+[PROCESS_TABLE+16*2+3]=x;
+[PROCESS_TABLE+16*2+4]=CREATED;
+[PROCESS_TABLE+16+4]=WAIT_PROCESS;
+[PROCESS_TABLE+16+5]=2;
+[SYSTEM_STATUS_TABLE]=x;
+backup;
+call MOD_5;
+restore;
+[userret]=0;
+endif;
+endif;
+else
+[userret]=-2;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;

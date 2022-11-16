@@ -1,0 +1,195 @@
+//boot module
+alias PID R15;
+alias x R14;
+alias y R13;
+//loading library
+loadi(63,13);
+loadi(64,14);
+
+//loading interupts and modules
+x=2;
+while(x<=53)
+do
+loadi(x,x+13);
+x=x+1;
+endwhile;
+
+//initializing semaphore table
+x=0;
+while(x<MAX_SEM_COUNT)
+do
+[SEMAPHORE_TABLE+x*4]=-1;
+[SEMAPHORE_TABLE+x*4]=0;
+x=x+1;
+endwhile;
+//initializing memory free list;
+x=0;
+while(x<83)
+do
+[MEMORY_FREE_LIST+x]=1;
+x=x+1;
+endwhile;
+
+while(x<128)
+do
+[MEMORY_FREE_LIST+x]=0;
+x=x+1;
+endwhile;
+
+//initializing system status table
+[SYSTEM_STATUS_TABLE+2]=45;
+[SYSTEM_STATUS_TABLE+3]=0;
+
+//initializing terminal status table and disk status table
+[TERMINAL_STATUS_TABLE]=0;
+[DISK_STATUS_TABLE]=0;
+
+//loading init
+loadi(65,7);
+loadi(66,8);
+loadi(67,9);
+loadi(68,10);
+x=0;
+while(x<10)
+do
+[DISK_MAP_TABLE+10*2+x]=-1;
+x=x+1;
+endwhile;
+[DISK_MAP_TABLE+10*2+4]=7;
+[DISK_MAP_TABLE+10*2+5]=8;
+
+//loading inode table and root
+loadi(59,3);
+loadi(60,4);
+loadi(61,2);
+loadi(62,5);
+
+
+//initializing file status table
+x=0;
+while(x<MAX_FILE_NUM)
+do
+[FILE_STATUS_TABLE+4*x]=-1;
+[FILE_STATUS_TABLE+4*x+1]=-1;
+x=x+1;
+endwhile;
+
+//initializing open file table
+x=0;
+while(x<MAX_OPENFILE_NUM)
+do
+[OPEN_FILE_TABLE+4*x]=-1;
+[OPEN_FILE_TABLE+4*x+1]=0;
+x=x+1;
+endwhile;
+
+//initializing buffer table
+x=0;
+while(x<MAX_BUFFER)
+do
+[BUFFER_TABLE+x*4]=-1;
+[BUFFER_TABLE+x*4+1]=0;
+[BUFFER_TABLE+x*4+2]=-1;
+x=x+1;
+endwhile;
+
+//initializing all processes from 1 to 15 in process table to terminated (as none of them are added yet, they are free)
+x=1;
+while(x<=15)
+do
+[PROCESS_TABLE+x*16+4]=TERMINATED;
+x=x+1;
+endwhile;
+
+
+//setting up page table for init
+PID=1;
+PTBR=PAGE_TABLE_BASE+PID*20;
+PTLR=10;
+//library
+[PTBR]=63;
+[PTBR+1]="0100";
+[PTBR+2]=64;
+[PTBR+3]="0100";
+[PTBR+4]=-1;
+[PTBR+5]="0000";
+[PTBR+6]=-1;
+[PTBR+7]="0000";
+[PTBR+8]=65;
+[PTBR+9]="0100";
+[PTBR+10]=-1;
+[PTBR+11]="0000";
+[PTBR+12]=-1;
+[PTBR+13]="0000";
+[PTBR+14]=-1;
+[PTBR+15]="0000";
+[PTBR+16]=77;
+[PTBR+17]="0110";
+[PTBR+18]=-1;
+[PTBR+19]="0000";
+
+//setting up process table
+[PROCESS_TABLE+PID*16+1]=PID;
+[PROCESS_TABLE+PID*16+3]=1;
+[PROCESS_TABLE+PID*16+4]=CREATED;
+[PROCESS_TABLE+PID*16+11]=66;
+[PROCESS_TABLE+PID*16+12]=0;
+[PROCESS_TABLE+PID*16+13]=8*512;
+[PROCESS_TABLE+PID*16+14]=PTBR;
+[PROCESS_TABLE+PID*16+15]=PTLR;
+
+//setting IP on stack
+[77*512]=[65*512+1];
+
+
+
+//setting up page table for shell
+PID=2;
+PTBR=PAGE_TABLE_BASE+PID*20;
+PTLR=10;
+//library
+[PTBR]=63;
+[PTBR+1]="0100";
+[PTBR+2]=64;
+[PTBR+3]="0100";
+[PTBR+4]=-1;
+[PTBR+5]="0000";
+[PTBR+6]=-1;
+[PTBR+7]="0000";
+[PTBR+8]=67;
+[PTBR+9]="0100";
+[PTBR+10]=68;
+[PTBR+11]="0100";
+[PTBR+12]=-1;
+[PTBR+13]="0000";
+[PTBR+14]=-1;
+[PTBR+15]="0000";
+[PTBR+16]=78;
+[PTBR+17]="0110";
+[PTBR+18]=79;
+[PTBR+19]="0110";
+
+//setting up process table
+[PROCESS_TABLE+PID*16+1]=PID;
+[PROCESS_TABLE+PID*16+2]=1;
+[PROCESS_TABLE+PID*16+3]=1;
+[PROCESS_TABLE+PID*16+11]=80;
+[PROCESS_TABLE+PID*16+12]=0;
+[PROCESS_TABLE+PID*16+13]=8*512;
+[PROCESS_TABLE+PID*16+14]=PTBR;
+[PROCESS_TABLE+PID*16+15]=PTLR;
+
+x=[PROCESS_TABLE+PID*16+11];
+x=(x+1)*512-1;
+y=0;
+while(y<16)
+do
+[x]=-1;
+x=x-1;
+y=y+1;
+endwhile;
+
+//setting IP on stack
+[78*512]=[67*512+1];
+return;
+

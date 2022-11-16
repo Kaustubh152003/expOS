@@ -1,0 +1,161 @@
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+alias uSP R8;
+alias userret R9;
+alias pw R10;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+global_start:
+
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=SP;
+[PROCESS_TABLE+PID*16+13]=SP;
+SP=[PROCESS_TABLE+PID*16+11]*512-1;
+
+
+val=uSP-5;
+call adress_translate;
+fno=[rval];
+
+val=uSP-3;
+call adress_translate;
+pw=[rval];
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+
+val=uSP-4;
+call adress_translate;
+val=[rval];
+
+
+[PROCESS_TABLE+PID*16+9]=fno;
+if(fno==22) //newusr
+then
+if([SYSTEM_STATUS_TABLE]!=1 || [SYSTEM_STATUS_TABLE+1]!=2)
+then
+[userret]=-2;
+else
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=val)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM)
+then
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=-1)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM)
+then
+[userret]=-3;
+else
+encrypt pw;
+[USER_TABLE+x*2]=val;
+[USER_TABLE+2*x+1]=pw;
+endif;
+else
+[userret]=-1;
+endif;
+endif;
+endif;
+
+if(fno==23) //rmusr
+then
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=val)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM || x<2 || [SYSTEM_STATUS_TABLE]!=1 || [SYSTEM_STATUS_TABLE+1]!=2)
+then
+[userret]=-2;
+else
+y=0;
+z=0;
+while(y<MAX_FILE_NUM)
+do
+if([ROOT_FILE+8*y+3]==x && [ROOT_FILE+8*y]!=-1)
+then
+[userret]=-3;
+z=1;
+endif;
+y=y+1;
+endwhile;
+if(z==0)
+then
+[USER_TABLE+2*x]=-1;
+[USER_TABLE+2*x+1]=-1;
+endif;
+endif;
+endif;
+
+if(fno==24) //setpwd
+then
+if(PID!=2)
+then
+[userret]=-1;
+else
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=val)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM )
+then
+[userret]=-2;
+else
+if([PROCESS_TABLE+16*PID+3]!=x && [SYSTEM_STATUS_TABLE]!=ROOT)
+then
+[userret]=-1;
+else
+encrypt pw;
+[USER_TABLE+2*x+1]=pw;
+endif;
+endif;
+endif;
+endif;
+
+if(fno==25) //getuname
+then
+if(val>0 && val<16)
+then
+[userret]=[USER_TABLE+2*val];
+else
+[userret]=-1;
+endif;
+endif;
+
+if(fno==26) //getuid
+then
+x=0;
+while(x<MAX_USER_NUM && [USER_TABLE+2*x]!=val)
+do
+x=x+1;
+endwhile;
+if(x==MAX_USER_NUM)
+then
+[userret]=-1;
+else
+[userret]=x;
+endif;
+endif;
+
+SP=[PROCESS_TABLE+PID*16+13];
+[PROCESS_TABLE+PID*16+9]=0;
+ireturn;

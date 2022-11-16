@@ -1,0 +1,175 @@
+//resource manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias x R4;
+alias y R5;
+alias z R6;
+alias rval R7;
+
+if(fno==1) //acquire buffer
+then
+while([BUFFER_TABLE+4*val+2]!=-1)
+do
+[PROCESS_TABLE+PID*16+4]=WAIT_BUFFER;
+[PROCESS_TABLE+PID*16+5]=val;
+backup;
+call MOD_5;
+restore;
+endwhile;
+[BUFFER_TABLE+4*val+2]=PID;
+endif;
+
+if(fno==2) //release buffer
+then
+if(PID!=[BUFFER_TABLE+4*val+2])
+then
+ret=-1;
+else
+[BUFFER_TABLE+4*val+2]=-1;
+x=0;
+while(x<16)
+do
+if([PROCESS_TABLE+16*x+4]==WAIT_BUFFER && [PROCESS_TABLE+16*x+5]==val)
+then
+[PROCESS_TABLE+16*x+4]=READY;
+endif;
+x=x+1;
+endwhile;
+ret=0;
+endif;
+
+endif;
+
+if(fno==3) //acquire disk
+then
+//print "ent:03";
+while([DISK_STATUS_TABLE]==1)
+do
+[PROCESS_TABLE+PID*16+4]=WAIT_DISK;
+backup;
+call MOD_5;
+restore;
+endwhile;
+[DISK_STATUS_TABLE]=1;
+[DISK_STATUS_TABLE+4]=PID;
+endif;
+
+if(fno==4) //acquire inode
+then
+while([FILE_STATUS_TABLE+val*4]!=-1)
+do
+[PROCESS_TABLE+16*PID+4]=WAIT_FILE;
+[PROCESS_TABLE+16*PID+5]=val;
+backup;
+call MOD_5;
+restore;
+endwhile;
+if([INODE_TABLE+16*val+1]==-1)
+then
+ret=-1;
+else
+[FILE_STATUS_TABLE+val*4]=PID;
+ret=0;
+endif;
+endif;
+
+
+
+if(fno==5) //release inode
+then
+if([FILE_STATUS_TABLE+4*val]==PID)
+then
+x=0;
+[FILE_STATUS_TABLE+4*val]=-1;
+while(x<16)
+do
+if([PROCESS_TABLE+x*16+4]==WAIT_FILE && [PROCESS_TABLE+x*16+5]==val)
+then
+[PROCESS_TABLE+x*16+4]=READY;
+endif;
+x=x+1;
+endwhile;
+ret=0;
+else
+ret=-1;
+endif;
+
+endif;
+
+
+if(fno==6) //acquire SEMAPHORE
+then
+x=0;
+while(x<32 && [SEMAPHORE_TABLE+4*x+1]!=0)
+do
+x=x+1;
+endwhile;
+if(x==32)
+then
+ret=-1;
+else
+[SEMAPHORE_TABLE+x]=-1;
+[SEMAPHORE_TABLE+x+1]=1;
+ret=x;
+endif;
+endif;
+
+if(fno==7) //release SEMAPHORE
+then
+if([SEMAPHORE_TABLE+4*val]==PID)
+then
+[SEMAPHORE_TABLE+4*val]=-1;
+x=1;
+while(x<16)
+do
+if([PROCESS_TABLE+16*x+4]==WAIT_SEMAPHORE && [PROCESS_TABLE+16*x+5]==val)
+then
+[PROCESS_TABLE+16*x+4]=READY;
+endif;
+x=x+1;
+endwhile;
+endif;
+[SEMAPHORE_TABLE+4*val+1]=[SEMAPHORE_TABLE+4*val+1]-1;
+endif;
+
+if(fno==8) //acquire terminal
+then
+while([TERMINAL_STATUS_TABLE]==1)
+do
+[PROCESS_TABLE+PID*16+4]=WAIT_TERMINAL;
+backup;
+call MOD_5;
+restore;
+endwhile;
+[TERMINAL_STATUS_TABLE]=1;
+[TERMINAL_STATUS_TABLE+1]=PID;
+//breakpoint;
+return;
+endif;
+
+
+if(fno==9) //release terminal
+then
+if([TERMINAL_STATUS_TABLE+1]==PID)
+then
+[TERMINAL_STATUS_TABLE]=0;
+x=0;
+    while(x<16)
+    do
+    if([PROCESS_TABLE+x*16+4]==WAIT_TERMINAL)
+    then
+    [PROCESS_TABLE+x*16+4]=READY;
+    endif;
+    x=x+1;
+    endwhile;
+ret=0;
+else
+ret=-1;
+endif;
+//breakpoint;
+return;
+endif;
+
+return;
