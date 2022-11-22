@@ -1,0 +1,81 @@
+//device manager module
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias val2 R4;
+
+if(fno==1)//disk_store
+then
+//print "ent:41";
+backup;
+fno=3;
+call MOD_0;
+restore;
+[DISK_STATUS_TABLE+1]=1;
+[DISK_STATUS_TABLE+2]=val;
+[DISK_STATUS_TABLE+3]=val2;
+store(val,val2);
+[PROCESS_TABLE+PID*16+4]=WAIT_DISK;
+backup;
+call MOD_5;
+restore;
+//print "ext:41";
+endif;
+
+if(fno==2)//disk_load
+then
+//print "ent:42";
+backup;
+fno=3;
+call MOD_0;
+restore;
+if(val<60)
+then
+print "err: db";
+breakpoint;
+halt;
+else
+[DISK_STATUS_TABLE+1]=1;
+[DISK_STATUS_TABLE+2]=val;
+[DISK_STATUS_TABLE+3]=val2;
+load(val,val2);
+[PROCESS_TABLE+16*PID+4]=WAIT_DISK;
+backup;
+call MOD_5;
+restore;
+endif;
+//print "ext:42";
+endif;
+
+if(fno==3) //terminal write
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+print val;
+backup;
+fno=9;
+call MOD_0;
+restore;
+endif;
+
+if(fno==4) //terminal_read
+then
+backup;
+fno=8;
+call MOD_0;
+restore;
+[PROCESS_TABLE+16*PID+4]=WAIT_TERMINAL;
+print "give for PID:";
+print PID;
+read;
+backup;
+call MOD_5;
+restore;
+[val]=[PROCESS_TABLE+16*PID+8];
+//breakpoint;
+endif;
+
+return;

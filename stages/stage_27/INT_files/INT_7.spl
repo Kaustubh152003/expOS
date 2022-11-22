@@ -1,0 +1,121 @@
+//INT 7
+alias ret R0;
+alias fno R1;
+alias PID R2;
+alias val R3;
+alias arg1 R4;
+alias arg2 R5;
+alias userret R6;
+alias x R7;
+alias y R8;
+alias z R9;
+alias rval R10;
+alias p R11;
+alias uSP R12;
+goto global_start;
+
+adress_translate: 
+x=val/512;
+y=val%512;
+rval=([PTBR+2*x]*512)+y;
+return;
+
+alt_print:
+backup;
+R1=3;
+R2=[SYSTEM_STATUS_TABLE+1];
+R3=arg2;
+call MOD_4;
+restore;
+return;
+
+global_start:
+
+//saving user SP ,setting up kernel stack and setting up process table
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=5;
+PID=[SYSTEM_STATUS_TABLE+1];
+uSP=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13];
+
+val=uSP-4;
+call adress_translate;
+arg1=[rval];
+
+val=uSP-1;
+call adress_translate;
+userret=rval;
+
+val=uSP-3;
+call adress_translate;
+arg2=[rval];
+
+if(arg1==-2)
+then
+	call alt_print;
+	val=uSP-1;
+	call adress_translate;
+	[rval]=0;
+else
+x=[PROCESS_TABLE+PID*16+11];
+x=(x+1)*512-16;
+if(arg1<8 && arg1>=0 && [x+2*arg1]==FILE)
+then
+y=[x+2*arg1+1];          //open file table index y
+z=[OPEN_FILE_TABLE+4*y];//inode index z
+
+//exclusive permisssion thingy
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12); //acquire inode
+fno=4;
+val=z;
+call MOD_0;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+if(ret==-1)
+then
+[userret]=-1;
+else
+p=[OPEN_FILE_TABLE+4*y+2];
+
+if(p==MAX_FILE_SIZE)
+then
+[userret]=-2;
+else
+if(p%512==0 && p==[INODE_TABLE+16*z+2])
+then
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+fno=3;
+call MOD_2;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+[INODE_TABLE+z*16+8+(p/512)]=ret;
+endif;
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+fno=1;
+val=[INODE_TABLE+z*16+8+(p/512)];
+arg1=p%512;
+arg2=[rval];
+call MOD_3;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+[INODE_TABLE+16*z+2]=[INODE_TABLE+16*z+2]+1;
+[ROOT_FILE+8*z+1]=[ROOT_FILE+8*z+1]+1;
+[OPEN_FILE_TABLE+4*y+2]=[OPEN_FILE_TABLE+4*y+2]+1;
+[userret]=0;
+endif;
+
+multipush(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12); //release inode
+fno=5;
+val=z;
+call MOD_0;
+multipop(R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12);
+endif;
+else
+print "err:I7";
+print arg1;
+[userret]=-1;
+endif; 
+endif;
+
+//restoring user SP;
+SP=[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+13]; 
+[PROCESS_TABLE+([SYSTEM_STATUS_TABLE+1]*16)+9]=0;
+ireturn;

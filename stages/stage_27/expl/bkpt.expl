@@ -1,0 +1,11 @@
+int main()
+{
+    decl
+    int a,garb;
+    enddecl
+
+    begin
+    breakpoint;
+    return 0;
+    end
+}

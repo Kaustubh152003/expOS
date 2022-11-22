@@ -1,0 +1,15 @@
+int main()
+{
+    decl
+    int a,b,garb;
+    enddecl
+
+    begin
+    garb=exposcall("Fork");
+    garb=exposcall("Fork");
+    garb=exposcall("Fork");
+    garb=exposcall("Fork");
+    garb=exposcall("Exec","getpid.xsm");
+    return 0;
+    end
+}

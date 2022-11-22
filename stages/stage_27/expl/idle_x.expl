@@ -1,0 +1,16 @@
+int main()
+{
+    decl
+    int a,b,garb;
+    enddecl
+
+    begin
+    a=0;
+    garb=exposcall("Read",-1,b);
+    while(a<b)
+    do
+    a=a+1;
+    endwhile;
+    return 0;
+    end
+}

@@ -1,0 +1,71 @@
+alias PID R15;
+alias x R14;
+alias og R13;
+multipush (BP);
+PID=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+PID*16+12]=SP%512;
+[PROCESS_TABLE+PID*16+14]=PTBR;
+[PROCESS_TABLE+PID*16+15]=PTLR;
+
+if([SYSTEM_STATUS_TABLE+5]!=0)
+then
+PID=15;
+if([PROCESS_TABLE+16*PID+4]!=READY && [PROCESS_TABLE+16*PID+4]!=CREATED)
+then
+PID=0;
+else
+PID=15;
+endif;
+else
+
+og=PID;
+//getting next in line PID
+if(PID==14 || PID==15) 
+then
+PID=1;
+else
+PID=PID+1;
+endif;
+
+//switching processes
+x=0;
+while(x<16)
+do
+if([PROCESS_TABLE+16*PID+6]==0 && ([PROCESS_TABLE+16*PID+4]==READY || [PROCESS_TABLE+16*PID+4]==CREATED))
+then
+break;
+endif;
+x=x+1;
+if(PID==14)
+then
+PID=1;
+else
+PID=PID+1;
+endif;
+endwhile;
+
+if(x==16)
+then
+PID=0;
+endif;
+
+endif;
+
+PTBR=[PROCESS_TABLE+PID*16+14];
+PTLR=[PROCESS_TABLE+PID*16+15];
+[SYSTEM_STATUS_TABLE+1]=PID;
+SP=[PROCESS_TABLE+PID*16+11]*512+[PROCESS_TABLE+PID*16+12];
+if([PROCESS_TABLE+PID*16+4]==READY)
+then
+[PROCESS_TABLE+PID*16+4]=RUNNING;
+multipop (BP);
+return;
+else
+SP=[PROCESS_TABLE+PID*16+13];
+BP=[[PROCESS_TABLE+PID*16+11]*512];
+[PROCESS_TABLE+PID*16+9]=0;
+[PROCESS_TABLE+PID*16+4]=RUNNING;
+//breakpoint;
+ireturn;
+endif;
+
